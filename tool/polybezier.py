@@ -65,15 +65,15 @@ class Polybezier:
         maxcoefprev = len(self.__allcoef) - 1
         if self.__degres > maxcoefprev:
             for n in range(maxcoefprev, self.__degres):
-                coefT = [1]
+                coeft = [1]
                 start = self.__allcoef[maxcoefprev]
                 for p in range(1, len(start)):
                     k = start[p - 1] + start[p]
-                    coefT.append(k)
-                coefT.append(1)
-                self.__allcoef.append(coefT)
+                    coeft.append(k)
+                coeft.append(1)
+                self.__allcoef.append(coeft)
                 maxcoefprev = n + 1
-                self.__coef = coefT
+                self.__coef = coeft
         else:
             self.__coef = self.__allcoef[self.__degres]
         self.__degreshaschanged = False
@@ -90,22 +90,19 @@ class Polybezier:
         self.__puisB = pb
 
     def print_formule(self):
-        l = len(self.__coef)
+        ln = len(self.__coef)
         eq = ''
-        pa = ''
-        b = ''
-        c = ''
-        for n in range(l):
+        for n in range(ln):
             c = str(self.__coef[n]) + "x"
             pa = '(1-t)^' + str(self.__puisA[n])
             b = 'xt^' + str(self.__puisB[n])
-            P = "xP" + str(n) + "+"
+            p = "xP" + str(n) + "+"
             if self.__coef[n] == 1:
                 c = ''
             if self.__puisA[n] == 0:
                 pa = ''
                 b = 't^' + str(self.__puisB[n])
-                P = "xP" + str(n)
+                p = "xP" + str(n)
             if self.__puisB[n] == 0:
                 b = ''
             if self.__puisA[n] == 1:
@@ -113,7 +110,7 @@ class Polybezier:
             if self.__puisB[n] == 1:
                 b = 'xt'
 
-            eq += c + pa + b + P
+            eq += c + pa + b + p
         return eq
 
     def __cal_result_t(self, tic_brute):
@@ -121,11 +118,10 @@ class Polybezier:
         if len(self.__points) < len(self.__coef):
             print("pas assez de points pour le calcul")
             return None
-        l = len(self.__coef)
+        ln = len(self.__coef)
         caltmp = Vector(0, 0)
-        k = 0
         tic = tic_brute / self.__precision
-        for n in range(0, l):
+        for n in range(0, ln):
             co = self.__coef[n]
             pa = self.__puisA[n]
             pb = self.__puisB[n]
