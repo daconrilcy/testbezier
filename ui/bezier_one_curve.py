@@ -1,12 +1,13 @@
 from kivy.app import App
-from kivy.graphics import Line, Bezier, Color, Ellipse, InstructionGroup, ContextInstruction
+from kivy.graphics import Line, Color, Ellipse
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 from kivy.vector import Vector
-from kivy.config import Config
+from tool.polybezier import Polybezier
 
-import random
+
+poly = Polybezier(precision=200)
 
 Window.fullscreen = 'auto'
 
@@ -23,7 +24,7 @@ class BezierTest(FloatLayout):
         self.points.append((0, 0, 100, 100))
         self.line = []
         self.circle = []
-        self.npoint = 4
+        self.npoint = 100
         self.actcircle = None
         self.ncircleEncours = None
         self.demi_dr = []
@@ -53,7 +54,8 @@ class BezierTest(FloatLayout):
                 h = 0
             else:
                 h = Window.height/2
-            self.centercircle.append((Window.width / (self.npoint + 1) * (n + 1), h))
+            ct = Vector((Window.width / (self.npoint + 1) * (n + 1), h))
+            self.centercircle.append(ct)
             self.circle.append(None)
             self.color_circle.append(None)
 
@@ -98,8 +100,11 @@ class BezierTest(FloatLayout):
                 self.quart_dr[n] = Line(points=q)
                 n += 1
             Color(1, 1, 1, 1)
+            for n in range(self.npoint):
+                self.centercircle[n] = Vector(self.circle[n].pos) + Vector(self.rayoncircle) / 2
             v = self.bezier_curve_create()
             self.c_bezier = Line(points=v)
+
 
     def creation_pointshalf(self):
         plts = []
@@ -150,7 +155,6 @@ class BezierTest(FloatLayout):
 
     def on_touch_up(self, touch):
         if self.isin:
-            self.centercircle[self.ncircleEncours] = self.circle[self.ncircleEncours].pos
             self.actcircle = None
             self.ncircleEncours = None
             self.isin = False
@@ -261,17 +265,9 @@ class BezierTest(FloatLayout):
         return False
 
     def bezier_curve_create(self):
-        v = []
-        ra = self.rayoncircle
-        A = self.circle
-        precision = 50
-        for l in range(0, precision + 1):
-            t = l / precision
-            r = (1 - t) ** 3 * (Vector(A[0].pos) + Vector(ra) / 2) + 3 * (1 - t) ** 2 * t * (
-                        Vector(A[1].pos) + Vector(ra) / 2) + 3 * (1 - t) * t ** 2 * (
-                            Vector(A[2].pos) + Vector(ra) / 2) + t ** 3 * (Vector(A[3].pos) + Vector(ra) / 2)
-            v.append(r)
-        return v
+        poly.set_points(self.centercircle)
+        u = poly.get_coord()
+        return u
 
     def updatec_bezier(self):
         self.c_bezier.points = self.bezier_curve_create()
@@ -311,7 +307,7 @@ class BezierTest(FloatLayout):
         if self.isin:
             self.color_status = 1
             self.circle[self.ncircleEncours].pos = Vector(actual) - Vector(self.rayoncircle) / 2
-            self.centercircle[self.ncircleEncours] = self.circle[self.ncircleEncours].pos
+            self.centercircle[self.ncircleEncours] = Vector(self.circle[self.ncircleEncours].pos)+Vector(self.rayoncircle)/2
             self.updateline()
             self.update_demi_dr()
             self.update_quart_droite()
