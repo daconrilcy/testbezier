@@ -4,9 +4,11 @@ from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 from kivy.vector import Vector
-from kivy.properties import NumericProperty, ObjectProperty
+from kivy.config import Config
+
 import random
 
+Window.fullscreen = 'auto'
 
 class BezierTest(FloatLayout):
 
@@ -30,7 +32,7 @@ class BezierTest(FloatLayout):
         self.quart_dr_plt = []
         self.c_bezier = None
         self.color_line = []
-        self.color_circle = None
+        self.color_circle =  []
         self.color_demi_line = []
         self.color_quart_line = []
         self.color_is_changed = False
@@ -44,14 +46,16 @@ class BezierTest(FloatLayout):
         self.color_line_default = Color(0.7, 0.7, 0.7, 1)
         self.color_demi_line_default = Color(0.5, 0.5, 0.5, 1)
         self.color_quart_line_default = Color(0.2, 0.2, 0.2, 1)
+        self.color_circle_default = Color(1, 1, 1, 1)
 
         for n in range(0, self.npoint, 1):
             if (n == 0) | (n == 3):
                 h = 0
             else:
-                h = 540
-            self.centercircle.append((1920 / (self.npoint + 1) * (n + 1), h))
+                h = Window.height/2
+            self.centercircle.append((Window.width / (self.npoint + 1) * (n + 1), h))
             self.circle.append(None)
+            self.color_circle.append(None)
 
         for n in range(0, self.npoint - 1):
             self.line.append(None)
@@ -60,9 +64,10 @@ class BezierTest(FloatLayout):
         cld = self.color_line_default
         cdld = self.color_demi_line_default
         cqld = self.color_quart_line_default
+        ccd = self.color_circle_default
         with self.canvas:
-            self.color_circle = Color(1, 0, 0, 1)
             for n in range(0, self.npoint):
+                self.color_circle[n] = Color(ccd.rgba)
                 self.circle[n] = Ellipse(pos=self.centercircle[n], size=self.rayoncircle)
 
             ry = rx = self.rayoncircle[0] / 2
@@ -279,12 +284,10 @@ class BezierTest(FloatLayout):
             self.o -= 0.1
             if self.o <= 0.05:
                 self.o = 0.05
-            self.color_circle.a = self.o
         elif self.color_status == 1:
             self.chrono_illumin = self.duree_illumin
             # la couleur s'illummine puis reste
             self.o = 1
-            self.color_circle.a = self.o
         elif self.color_status == 2:
             # pause avant delcin
             vdim = self.duree_illumin*dt
@@ -296,9 +299,12 @@ class BezierTest(FloatLayout):
             self.o += 0.05
             if self.o > 1:
                 self.o = 1
-            self.color_circle.a = self.o
 
-
+    def update_color_transparency(self):
+        cls = [self.color_circle, self.color_line, self.color_demi_line, self.color_quart_line]
+        for cl in cls:
+            for c in cl:
+                c.a = self.o
 
     def update(self, dt):
         actual = Window.mouse_pos
@@ -315,9 +321,8 @@ class BezierTest(FloatLayout):
         else:
             if self.color_status != 0:
                 self.color_status = 2
-
-        print(self.color_status)
         self.update_color_status(dt)
+        self.update_color_transparency()
 
 class Main(App):
     def build(self):
