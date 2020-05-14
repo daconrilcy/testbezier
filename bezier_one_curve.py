@@ -4,12 +4,14 @@ from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 from kivy.vector import Vector
-from tool.polybezier import Polybezier
+from kivy.uix.label import Label
 
+from polybezier import Polybezier
 
 poly = Polybezier(precision=200)
 
 Window.fullscreen = 'auto'
+
 
 class BezierTest(FloatLayout):
 
@@ -24,7 +26,7 @@ class BezierTest(FloatLayout):
         self.points.append((0, 0, 100, 100))
         self.line = []
         self.circle = []
-        self.npoint = 100
+        self.npoint = 10
         self.actcircle = None
         self.ncircleEncours = None
         self.demi_dr = []
@@ -33,7 +35,7 @@ class BezierTest(FloatLayout):
         self.quart_dr_plt = []
         self.c_bezier = None
         self.color_line = []
-        self.color_circle =  []
+        self.color_circle = []
         self.color_demi_line = []
         self.color_quart_line = []
         self.color_is_changed = False
@@ -43,6 +45,10 @@ class BezierTest(FloatLayout):
         self.duree_extinction = 10
         self.color_status = 3
         self.o = 1
+        self.label_rafr = None
+        self.ct = 0
+        self.sum_rafr = []
+        self.moy_rafr = 0
 
         self.color_line_default = Color(0.7, 0.7, 0.7, 1)
         self.color_demi_line_default = Color(0.5, 0.5, 0.5, 1)
@@ -100,11 +106,10 @@ class BezierTest(FloatLayout):
                 self.quart_dr[n] = Line(points=q)
                 n += 1
             Color(1, 1, 1, 1)
+            self.label_rafr = Label(text="Hello")
             for n in range(self.npoint):
                 self.centercircle[n] = Vector(self.circle[n].pos) + Vector(self.rayoncircle) / 2
-            v = self.bezier_curve_create()
-            self.c_bezier = Line(points=v)
-
+            self.c_bezier = Line(points=self.bezier_curve_create())
 
     def creation_pointshalf(self):
         plts = []
@@ -166,7 +171,7 @@ class BezierTest(FloatLayout):
         for c in self.circle:
             if self.isincircle(pos, c):
                 return True
-        if self.issuralldroite(pos):
+        if self.test_over_toute_droite(pos):
             return True
         return False
 
@@ -198,18 +203,7 @@ class BezierTest(FloatLayout):
                 self.ncircleEncours = n
                 self.isin = True
 
-    def calculaxb(self, point1, point2):
-        x1 = point1[0]
-        y1 = point1[1]
-        x2 = point2[0]
-        y2 = point2[1]
-        if x2-x1 !=0:
-            a = (y2-y1)/(x2-x1)
-            b = (y1*x2-y2*x1)/(x2-x1)
-            return a, b
-        return None, None
-
-    def issuralldroite(self, mousepos):
+    def test_over_toute_droite(self, mousepos):
         dr = [self.line, self.demi_dr, self.quart_dr]
         cl = [self.color_line, self.color_demi_line, self.color_quart_line]
         cd = [self.color_line_default, self.color_demi_line_default, self.color_quart_line_default]
@@ -229,7 +223,8 @@ class BezierTest(FloatLayout):
             c += 1
         return False
 
-    def issurladroite(self, dr: Line, pointv):
+    @staticmethod
+    def issurladroite(dr: Line, pointv):
         pt1 = Vector(dr.points[0:2])
         pt2 = Vector(dr.points[2:4])
 
@@ -276,7 +271,6 @@ class BezierTest(FloatLayout):
         if self.color_status == 0:
             # la couleur de l'armature s'eteind
             # check du rafraichement
-            vdim = self.duree_extinction*dt/10
             self.o -= 0.1
             if self.o <= 0.05:
                 self.o = 0.05
@@ -291,7 +285,6 @@ class BezierTest(FloatLayout):
             if self.chrono_illumin <= 0:
                 self.color_status = 0
         elif self.color_status == 4:
-            vdim = self.duree_extinction*dt/10
             self.o += 0.05
             if self.o > 1:
                 self.o = 1
@@ -303,11 +296,22 @@ class BezierTest(FloatLayout):
                 c.a = self.o
 
     def update(self, dt):
+        self.ct += 1
+        self.sum_rafr.append(1/dt)
+        if self.ct >= 10:
+            self.label_rafr.text = str(round(min(self.sum_rafr))) + " - " +\
+                                   str(round(sum(self.sum_rafr)/len(self.sum_rafr))) + " - " \
+                                   + str(round(max(self.sum_rafr)))
+            if len(self.sum_rafr) > 200:
+                self.sum_rafr = []
+            self.ct = 0
         actual = Window.mouse_pos
         if self.isin:
             self.color_status = 1
             self.circle[self.ncircleEncours].pos = Vector(actual) - Vector(self.rayoncircle) / 2
-            self.centercircle[self.ncircleEncours] = Vector(self.circle[self.ncircleEncours].pos)+Vector(self.rayoncircle)/2
+            self.centercircle[self.ncircleEncours] = \
+                Vector(self.circle[self.ncircleEncours].pos) + \
+                Vector(self.rayoncircle)/2
             self.updateline()
             self.update_demi_dr()
             self.update_quart_droite()
@@ -319,6 +323,7 @@ class BezierTest(FloatLayout):
                 self.color_status = 2
         self.update_color_status(dt)
         self.update_color_transparency()
+
 
 class Main(App):
     def build(self):

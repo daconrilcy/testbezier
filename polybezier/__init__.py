@@ -6,7 +6,10 @@
 # depart : ((1-t)+t)²
 from kivy.vector import Vector
 
+import numpy as np
 
+
+# !!!! Attention les points doivent être envoyé sous forme de tableau vecteur !!!!!! #
 class Polybezier:
     def __init__(self, points=None, precision=100):
         if points is None:
@@ -14,19 +17,26 @@ class Polybezier:
         if precision == 0:
             precision = 1
         self.__points = points
+        self.__npoints = 0
+        self.__ncoef = 0
         self.__degres = len(points) - 1
         self.__precision = precision
-        self.__allcoef = [[0], [1, 1], [1, 2, 1]]
+        self.__allcoef = [[0], [1, 1], [1, 2, 1], [1, 3, 3, 1]]
         self.__puisA = []
         self.__puisB = []
         self.__coef = []
         self.__coord = None
         self.__calcNeedUpdate = False
         self.__recalPuisCoef = False
+        self.__preCalculed_t = None
+        self.__pre_calculed_tcoef = None
+        self.__precalcNeedUpdate = True
+        self.coorda = None
 
         self.__calc_coef()
+        self.__pre_calcul_tcoef()
+        self.__calcul_coord2()
         self.__calc_puissance()
-        self.__do_all_calc()
 
     def get_points(self):
         return self.__points
@@ -34,10 +44,11 @@ class Polybezier:
     def set_points(self, points=None):
         if points is None:
             points = [[0, 0], [0, 0]]
-        if len(self.__points) != len(points):
-            self.__recalPuisCoef = True
+        if self.__npoints != len(points):
+            self.__degres = len(points) - 1
+            self.__calc_coef()
         self.__points = points
-        self.__degres = len(points) - 1
+        self.__npoints = len(points)
         self.__calcNeedUpdate = True
 
     def get_precision(self):
@@ -45,11 +56,11 @@ class Polybezier:
 
     def set_precision(self, precision=100):
         self.__precision = precision
-        self.__calcNeedUpdate = True
+        self.__precalcNeedUpdate = True
 
     def get_coord(self):
         if self.__calcNeedUpdate:
-            self.__do_all_calc()
+            self.__calcul_coord2()
         return self.__coord
 
     def get_degres(self):
@@ -74,6 +85,7 @@ class Polybezier:
                 self.__allcoef.append(coeft)
                 maxcoefprev = n + 1
                 self.__coef = coeft
+                self.__ncoef = len(coeft)
         else:
             self.__coef = self.__allcoef[self.__degres]
         self.__degreshaschanged = False
@@ -113,30 +125,27 @@ class Polybezier:
             eq += c + pa + b + p
         return eq
 
-    def __cal_result_t(self, tic_brute):
+    def __pre_calcul_tcoef(self):
+        t1 = []
+        t2 = []
+        for n in range(0, self.__precision + 1):
+            t = n / self.__precision
+            tmp1 = []
+            tmp2 = []
+            for d in range(self.__degres + 1):
+                r = self.__degres - d
+                tmp1.append((1 - t) ** r)
+                tmp2.append(t ** d)
+            t1.append(tmp1)
+            t2.append(tmp2)
+        t1 = np.mat(t1)
+        t2 = np.mat(t2)
+        self.__preCalculed_t = np.multiply(t1, t2)
+        self.__pre_calculed_tcoef = np.multiply(self.__preCalculed_t, self.__coef)
+        self.__calcNeedUpdate = False
 
-        if len(self.__points) < len(self.__coef):
-            print("pas assez de points pour le calcul")
-            return None
-        ln = len(self.__coef)
-        caltmp = Vector(0, 0)
-        tic = tic_brute / self.__precision
-        for n in range(0, ln):
-            co = self.__coef[n]
-            pa = self.__puisA[n]
-            pb = self.__puisB[n]
-            pv = Vector(self.__points[n])
-            k = co * (1 - tic) ** pa * tic ** pb * pv
-            caltmp += k
-        return caltmp
-
-    def __do_all_calc(self):
-        coord = []
-        if self.__recalPuisCoef:
-            self.__calc_puissance()
-            self.__calc_coef()
-            self.__recalPuisCoef = False
-
-        for pr in range(self.__precision):
-            coord.append(self.__cal_result_t(pr))
-        self.__coord = coord
+    def __calcul_coord2(self):
+        if self.__precalcNeedUpdate:
+            self.__pre_calcul_tcoef()
+        self.__coord = np.array(self.__pre_calculed_tcoef * self.__points).tolist()
+        self.__calcNeedUpdate = False
