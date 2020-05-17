@@ -1,16 +1,18 @@
 from kivy.app import App
-from kivy.graphics import Line, Color, Ellipse
+from kivy.graphics import Line, Color, Ellipse, Rectangle
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 from kivy.vector import Vector
 from kivy.uix.label import Label
-
+from kivy.uix.widget import Widget
 from polybezier import Polybezier
+from kivy.config import Config
 
 poly = Polybezier(precision=200)
 
 Window.fullscreen = 'auto'
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 
 class BezierTest(FloatLayout):
@@ -20,13 +22,14 @@ class BezierTest(FloatLayout):
         self.loop = True
         self.clickOn = [0, 0]
         self.centercircle = []
-        self.rayoncircle = (30, 30)
+        self.rayoncircle_default = (30, 30)
+        self.rayoncircle = [Ellipse.size]
         self.isin = False
         self.points = []
         self.points.append((0, 0, 100, 100))
         self.line = []
         self.circle = []
-        self.npoint = 10
+        self.npoint = 4
         self.actcircle = None
         self.ncircleEncours = None
         self.demi_dr = []
@@ -49,6 +52,7 @@ class BezierTest(FloatLayout):
         self.ct = 0
         self.sum_rafr = []
         self.moy_rafr = 0
+        self.newCircle = []
 
         self.color_line_default = Color(0.7, 0.7, 0.7, 1)
         self.color_demi_line_default = Color(0.5, 0.5, 0.5, 1)
@@ -56,29 +60,26 @@ class BezierTest(FloatLayout):
         self.color_circle_default = Color(1, 1, 1, 1)
 
         for n in range(0, self.npoint, 1):
-            if (n == 0) | (n == 3):
+            if (n == 0) | (n == self.npoint - 1):
                 h = 0
             else:
-                h = Window.height/2
+                h = Window.height / 2
             ct = Vector((Window.width / (self.npoint + 1) * (n + 1), h))
             self.centercircle.append(ct)
-            self.circle.append(None)
-            self.color_circle.append(None)
 
         for n in range(0, self.npoint - 1):
             self.line.append(None)
 
         Clock.schedule_interval(self.update, 0)
         cld = self.color_line_default
-        cdld = self.color_demi_line_default
+        cdld = self. color_demi_line_default
         cqld = self.color_quart_line_default
         ccd = self.color_circle_default
-        with self.canvas:
-            for n in range(0, self.npoint):
-                self.color_circle[n] = Color(ccd.rgba)
-                self.circle[n] = Ellipse(pos=self.centercircle[n], size=self.rayoncircle)
 
-            ry = rx = self.rayoncircle[0] / 2
+        self.creation_cercle()
+
+        with self.canvas:
+            ry = rx = self.rayoncircle_default[0] / 2
             for n in range(0, self.npoint - 1):
                 self.color_line.append(None)
                 self.color_line[n] = Color(cld.r, cld.g, cld.b, cld.a)
@@ -108,15 +109,25 @@ class BezierTest(FloatLayout):
             Color(1, 1, 1, 1)
             self.label_rafr = Label(text="Hello")
             for n in range(self.npoint):
-                self.centercircle[n] = Vector(self.circle[n].pos) + Vector(self.rayoncircle) / 2
+                self.centercircle[n] = Vector(self.circle[n].pos) + Vector(self.rayoncircle_default) / 2
             self.c_bezier = Line(points=self.bezier_curve_create())
+
+    def creation_cercle(self):
+        with self.canvas:
+            for n in range(0, self.npoint):
+                self.color_circle.append(Color(self.color_circle_default.rgba))
+                self.circle.append(Ellipse(pos=self.centercircle[n], size=self.rayoncircle_default))
+                self.rayoncircle.append(self.circle[n].size)
 
     def creation_pointshalf(self):
         plts = []
-        r = self.rayoncircle
+        r = self.rayoncircle_default
+        p = self.centercircle
+
         for n in range(0, self.npoint - 1):
-            plts.append(((self.circle[n].pos[0] + self.circle[n + 1].pos[0]) / 2 + r[0] / 2,
-                         (self.circle[n].pos[1] + self.circle[n + 1].pos[1]) / 2 + r[1] / 2))
+            plts.append((Vector(p[n]) + Vector(p[n + 1])) / 2)
+            # plts.append(((self.circle[n].pos[0] + self.circle[n + 1].pos[0]) / 2 + r[0] / 2,
+            #            (self.circle[n].pos[1] + self.circle[n + 1].pos[1]) / 2 + r[1] / 2))
 
         self.demi_dr_plt = plts
         return plts
@@ -155,7 +166,10 @@ class BezierTest(FloatLayout):
 
     def on_touch_down(self, touch):
         self.clickOn = Window.mouse_pos
-        self.testcircle(self.clickOn)
+        if touch.button == "right":
+            print("clic droit")
+        if touch.button == "left":
+            self.testcircle(self.clickOn)
         return super(BezierTest, self).on_touch_down(touch)
 
     def on_touch_up(self, touch):
@@ -177,7 +191,7 @@ class BezierTest(FloatLayout):
 
     def updateline(self):
         n = self.ncircleEncours
-        ry = rx = self.rayoncircle[0] / 2
+        ry = rx = self.rayoncircle_default[0] / 2
 
         if (n == 0) | (n == self.npoint - 1):
             pts = []
@@ -228,11 +242,11 @@ class BezierTest(FloatLayout):
         pt1 = Vector(dr.points[0:2])
         pt2 = Vector(dr.points[2:4])
 
-        ab = pt2-pt1
-        ac = Vector(pointv)-pt2
-        r = ab.x*ac.y-ab.y*ac.x
+        ab = pt2 - pt1
+        ac = Vector(pointv) - pt2
+        r = ab.x * ac.y - ab.y * ac.x
 
-        if round(r/1000) == 0:
+        if round(r / 1000) == 0:
             return True
         return False
 
@@ -247,9 +261,9 @@ class BezierTest(FloatLayout):
         return False
 
     def isincircle(self, coord, xcircle):
-        xc = xcircle.pos[0]+self.rayoncircle[0]/2
-        yc = xcircle.pos[1]+self.rayoncircle[1]/2
-        rc = self.rayoncircle[0]
+        xc = xcircle.pos[0] + self.rayoncircle_default[0] / 2
+        yc = xcircle.pos[1] + self.rayoncircle_default[1] / 2
+        rc = self.rayoncircle_default[0]
         x = coord[0]
         y = coord[1]
 
@@ -280,7 +294,7 @@ class BezierTest(FloatLayout):
             self.o = 1
         elif self.color_status == 2:
             # pause avant delcin
-            vdim = self.duree_illumin*dt
+            vdim = self.duree_illumin * dt
             self.chrono_illumin -= vdim
             if self.chrono_illumin <= 0:
                 self.color_status = 0
@@ -297,10 +311,10 @@ class BezierTest(FloatLayout):
 
     def update(self, dt):
         self.ct += 1
-        self.sum_rafr.append(1/dt)
+        self.sum_rafr.append(1 / dt)
         if self.ct >= 10:
-            self.label_rafr.text = str(round(min(self.sum_rafr))) + " - " +\
-                                   str(round(sum(self.sum_rafr)/len(self.sum_rafr))) + " - " \
+            self.label_rafr.text = str(round(min(self.sum_rafr))) + " - " + \
+                                   str(round(sum(self.sum_rafr) / len(self.sum_rafr))) + " - " \
                                    + str(round(max(self.sum_rafr)))
             if len(self.sum_rafr) > 200:
                 self.sum_rafr = []
@@ -308,10 +322,10 @@ class BezierTest(FloatLayout):
         actual = Window.mouse_pos
         if self.isin:
             self.color_status = 1
-            self.circle[self.ncircleEncours].pos = Vector(actual) - Vector(self.rayoncircle) / 2
+            self.circle[self.ncircleEncours].pos = Vector(actual) - Vector(self.rayoncircle_default) / 2
             self.centercircle[self.ncircleEncours] = \
                 Vector(self.circle[self.ncircleEncours].pos) + \
-                Vector(self.rayoncircle)/2
+                Vector(self.rayoncircle_default) / 2
             self.updateline()
             self.update_demi_dr()
             self.update_quart_droite()
@@ -323,6 +337,7 @@ class BezierTest(FloatLayout):
                 self.color_status = 2
         self.update_color_status(dt)
         self.update_color_transparency()
+
 
 
 class Main(App):

@@ -47,7 +47,7 @@ class Polybezier:
         if self.__npoints != len(points):
             self.__degres = len(points) - 1
             self.__calc_coef()
-        self.__points = points
+        self.__points = np.array(points)
         self.__npoints = len(points)
         self.__calcNeedUpdate = True
 
@@ -102,6 +102,7 @@ class Polybezier:
         self.__puisB = pb
 
     def print_formule(self):
+        self.__calc_puissance()
         ln = len(self.__coef)
         eq = ''
         for n in range(ln):
