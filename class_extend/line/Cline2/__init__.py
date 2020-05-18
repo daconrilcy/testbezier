@@ -1,6 +1,4 @@
-from class_extend.circle import Circle
 from class_extend.line.bline import Bline
-from kivy.uix.widget import Widget
 
 
 class Cline(Bline):
