@@ -6,7 +6,7 @@ from kivy.clock import Clock
 
 
 class Circle(Widget):
-    def __init__(self, color: Color = None, rayon=None, **kwargs):
+    def __init__(self, color: Color = None, rayon=None, pos=(100, 100), **kwargs):
         super().__init__(**kwargs)
         self.player = None
         self.touched = False
@@ -24,6 +24,7 @@ class Circle(Widget):
         self.player_pos_clicked = None
         self.mouse_pos = None
         self.poids = rayon
+        self.pos = pos
         with self.canvas:
             self.color = Color(color.r, color.g, color.b, color.a)
             self.player = Ellipse(pos=self.pos, size=(rayon, rayon))
@@ -91,6 +92,6 @@ class Circle(Widget):
     def get_center(self):
         return Vector(self.player.pos) + Vector(self.player.size)/2
 
-    def update(self):
+    def update(self, dt):
         self.mouse_pos = Window.mouse_pos
         self.zoommify()

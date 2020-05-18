@@ -6,10 +6,10 @@ from kivy.core.window import Window
 from class_extend.circle import Circle
 
 
-class Mline(Widget):
+class Cline(Widget):
     def __init__(self, color: Color = None, circle1: Circle = None, circle2: Circle = None, **kwargs):
         super().__init__(**kwargs)
-        self.mline = None
+        self.cline = None
         if color is None:
             color = Color(1, 1, 1, 1)
         self.color = None
@@ -18,6 +18,7 @@ class Mline(Widget):
         self.noeud1 = circle1
         self.noeud2 = circle2
         self.poids = 1
+        self.points = None
         self.is_overed = False
         self.timer_extinction = 2
         self.is_eteind = False
@@ -27,8 +28,10 @@ class Mline(Widget):
 
         with self.canvas:
             self.color = Color(color.r, color.g, color.b, color.a)
-            self.mline = Line(points=(circle1.get_center()[0], circle1.get_center()[1],
+            self.cline = Line(points=(circle1.get_center()[0], circle1.get_center()[1],
                                       circle2.get_center()[0], circle2.get_center()[1]))
+
+        self.points = self.cline.points
 
         Clock.schedule_interval(self.update, 0)
 
@@ -42,8 +45,8 @@ class Mline(Widget):
         self.color.a = o
 
     def is_on_over(self):
-        a = Vector(self.mline.points[0:2])
-        b = Vector(self.mline.points[2:4])
+        a = Vector(self.cline.points[0:2])
+        b = Vector(self.cline.points[2:4])
         c = Vector(self.mouse_pos)
         d = round(a.distance(c) + c.distance(b) - a.distance(b))
         if d == 0:
@@ -52,7 +55,8 @@ class Mline(Widget):
             self.is_overed = False
 
     def update_pos(self):
-        self.mline.points = (self.noeud1.get_center(), self.noeud2.get_center())
+        self.cline.points = (self.noeud1.get_center(), self.noeud2.get_center())
+        self.points = self.cline.points
 
     def illumine(self):
         o = self.color.a
