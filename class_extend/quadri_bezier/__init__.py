@@ -82,6 +82,11 @@ class Quadribezier(Widget):
             for li in ls:
                 self.add_widget(li)
 
+    def get_points(self):
+        pt= []
+        for c in self.circles:
+            pt.append(c.get_center())
+        return pt
 
 class BezierLine:
     def __init__(self, circles: list = None):

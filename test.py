@@ -23,25 +23,18 @@ class Game(FloatLayout):
             'down': False,
             'shift': True
         }
-        a = np.array([1,2,3])
-        b = np.array([0, 1, 0])
-        print(np.muliply[a,b])
-        points = [[10, 210], [210, 410], [410, 410], [610, 210]]
-        points2 = [[0, 200], [200, 400], [400, 400], [600, 200], [800, 0], [1000, 0], [1200, 200]]
-        self.bezier = Casteljau2(points=points, precision=2)
+        self.points = [[0, 200], [200, 400], [400, 400], [600, 200], [800, 0], [1000, 0], [1200, 200],[1400,400], [1600,600],[1800, 600]]
+        self.bezier = Casteljau2(points=self.points, precision=50)
         self.coord = self.bezier.coord.tolist()
-        self.bezier.def_groupe_points(4)
-        self.bezier.pre_calc_t_etendu(5)
 
-        #print(self.bezier.precision_list)
+        self.lf = []
         with self.canvas:
             Color(1, 1, 1, 1)
             for n in range(0, len(self.coord)-1):
-                Line(points=(self.coord[n], self.coord[n+1]))
+                self.lf.append(Line(points=(self.coord[n], self.coord[n+1])))
 
-        q = Quadribezier(points=points2, rayon=self.r_defaut)
-        #q = Quadribezier(nbpoints = 4)
-        self.add_widget(q)
+        self.q = Quadribezier(points=self.points, rayon=self.r_defaut)
+        self.add_widget(self.q)
         Clock.schedule_interval(self.update, 0)
 
     def _keyboard_closed(self):
@@ -66,8 +59,15 @@ class Game(FloatLayout):
         return True
 
     def update(self, dt):
+        pt = self.q.get_points()
+        self.bezier.set_points_aslist(pt)
+        pt2 = self.bezier.coord.tolist()
+        self.update_line(pt2)
         pass
 
+    def update_line(self, points):
+        for n in range(0, len(points) - 1):
+            self.lf[n].points = (points[n], points[n+1])
 
 class PongApp(App):
     def build(self):
