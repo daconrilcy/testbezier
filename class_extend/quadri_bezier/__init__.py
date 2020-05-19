@@ -4,13 +4,13 @@ from class_extend.line.Mline import Mline
 from kivy.uix.widget import Widget
 from kivy.graphics import Color
 from kivy.core.window import Window
+from kivy.vector import Vector
 import math
 
 
 class Quadribezier(Widget):
-    def __init__(self, nbpoints=4, **kwargs):
+    def __init__(self, nbpoints: [float] = 4, points=None, rayon:float = 20, **kwargs):
         super().__init__(**kwargs)
-        self.npoints = nbpoints
         self.circles = []
         self.lines = []
         self.line_support = []
@@ -19,7 +19,16 @@ class Quadribezier(Widget):
         self.pos = (0, 0)
         self.width = Window.width
         self.height = Window.height
-        self.rayon = 20
+        self.rayon = rayon
+        if points is None:
+            if nbpoints is None:
+                self.npoints = 4
+            else:
+                self.npoints = nbpoints
+            self.pos_circle = self.positionne_circle_auto()
+        else:
+            self.pos_circle = self.transf_listtuple_tolist(points)
+            self.npoints = len(points)
         self.beziers_lines_obj: BezierLine
 
         self.creer_circles()
@@ -27,7 +36,21 @@ class Quadribezier(Widget):
         self.jonction_lines()
         self.affiche_lines()
 
-    def positionne_circle(self):
+    def transf_listtuple_tolist(self, points):
+        t = None
+        if isinstance(points, list):
+            if isinstance(points[0], int) | isinstance(points[0], float):
+                return points
+            elif isinstance(points[0], tuple) | isinstance(points[0], list):
+                x = []
+                for nts in points:
+                    for n in nts:
+                        x.append(n)
+                return x
+            else:
+                return [0, 0]
+
+    def positionne_circle_auto(self):
         pos = []
         y = []
         x = []
@@ -38,14 +61,15 @@ class Quadribezier(Widget):
             x.append(n * delta_x)
         x[self.npoints - 1] -= self.rayon
         for n in range(self.npoints):
-            pos.append((x[n], y[n]))
-
+            pos.append(x[n])
+            pos.append(y[n])
+        print(pos)
         return pos
 
     def creer_circles(self):
-        pos = self.positionne_circle()
+        pos = self.pos_circle
         for n in range(0, self.npoints):
-            self.circles.append(Circle(color=Color(1, 1, 1, 1), rayon=self.rayon, pos=pos[n]))
+            self.circles.append(Circle(color=Color(1, 1, 1, 1), rayon=self.rayon, pos=pos[n*2:(n*2)+2]))
             self.add_widget(self.circles[n])
 
     def jonction_lines(self):
@@ -55,8 +79,8 @@ class Quadribezier(Widget):
 
     def affiche_lines(self):
         for ls in self.lines:
-            for l in ls:
-                self.add_widget(l)
+            for li in ls:
+                self.add_widget(li)
 
 
 class BezierLine:
@@ -99,5 +123,6 @@ class BezierLine:
 
     def creer_all_lines(self):
         self.creer_lines_support()
-        #self.creer_demi_lines()
-        #self.creer_quart_lines()
+        self.creer_demi_lines()
+        self.creer_quart_lines()
+

@@ -1,6 +1,5 @@
 #Class de base pour les widgets lignes
-from abc import abstractmethod,ABCMeta
-
+from abc import abstractmethod
 from kivy.graphics import Line, Color
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
